@@ -1,50 +1,52 @@
 # %%
-import os
-# os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
-import numpy as np
 import tensorflow as tf
+from tensorflow import keras
 from keras import Input
+from sklearn.model_selection import train_test_split
 from sklearn.datasets import fetch_california_housing
 from keras.api.models import Sequential
 from keras.api.layers import Dense
+from keras import activations
+from keras.losses import MeanSquaredError
 from tensorflow import math
 
 # %%
 
 housing = fetch_california_housing()
-x = data
+x = housing.data
+y = housing.target
+
+x_train, x_test, y_train, y_test = train_test_split(
+    x, y, test_size=0.33, random_state=42)
 
 # %%
+# Model creation with parametrized activations
+def make_model(activation: callable) -> Sequential:
+    model = Sequential([
+        # Input(shape=(None, 8)),
+        Dense(8, activation=activation),
+        Dense(8, activation=activation),
+        Dense(1)
+    ])
 
-ds_train = tf.keras.preprocessing.timeseries_dataset_from_array(
-     data=df_train[['High', 'Low', 'Volume', 'selic', 'oil_price', 'exchange_rate', 'ipca', 'bovespa']],
-     targets=df_train['Open'],
-     sequence_length=10)
-
-ds_test = tf.keras.preprocessing.timeseries_dataset_from_array(
-     data=df_test[['High', 'Low', 'Volume', 'selic', 'oil_price', 'exchange_rate', 'ipca', 'bovespa']],
-     targets=df_test['Open'],
-     sequence_length=10)
-
-# Model
-def activatea(x):
-    return math.maximum(x, 0)
-
-model = Sequential([
-    Input(shape=(10, 8)),
-    Dense(24, activation=activatea),
-    Dense(1)
-])
-
-model.compile(loss='mean_squared_error', optimizer='adam')
-
+    model.compile("adam", loss=MeanSquaredError)
+    return model
 
 # %%
-print(ds_train)
+# Custom activation functions
+def reExp(x: tf.float32):
+    x
+    return tf.maximum(0, x)
 
-model.fit(ds_train, epochs=1000)
-predictions = model.predict(ds_test)
+# %%
+# Compare activations
 
-print
+# ReLu
+# relu = make_model(activations.relu)
+# relu.fit(x, y, batch_size=200, epochs=300)
+
+# rectified Exponential (reExp)
+reExp = make_model(reExp)
+reExp.fit(x, y, batch_size=200, epochs=300)
 
 # %%
