@@ -12,6 +12,7 @@ from keras.losses import MeanSquaredError
 from tensorflow import math
 from math import e
 import pandas as pd
+import plotly.express as px
 
 # %%
 
@@ -36,27 +37,31 @@ def make_model(activation: callable) -> Sequential:
 
 # %%
 # Custom activation functions
+IN_LIMIT = 5
+OUT_LIMIT = 20
+
+def limit(x):
+    return math.maximum(math.minimum(x, IN_LIMIT), -IN_LIMIT)
+
 def capped_relu(x: tf.Tensor):
     return math.maximum(math.minimum(x, 1.0), 0.0)
 
 def quadratic_relu(x: tf.Tensor):
-    return math.maximum(x**2, 0.0)
+    return math.minimum((math.maximum(limit(x), 0.0)/x)*x**2.0, OUT_LIMIT)
 
 def exp_relu(x: tf.Tensor):
-    return math.maximum(e**x, 0.0)
-
-def quadratic_relu(x: tf.Tensor):
-    return math.maximum(math.minimum(x**2, 1.0), 0.0)
+    return math.minimum(math.exp(limit(x) - 1.0), OUT_LIMIT)
 
 # %%
 # Compare activations
 results = []
+MAX_EPOCHS = 3
 
-for epoch in range(1, 3):
+for epoch in range(1, MAX_EPOCHS + 1):
 
     # ReLu
     relu = make_model(activations.relu)
-    relu.fit(data_x, data_y, batch_size=200, epochs=300)
+    relu.fit(data_x, data_y, batch_size=200, epochs=epoch)
     score = relu.evaluate(x_test, y_test)
     results.append(["relu", epoch, score])
 
@@ -89,15 +94,14 @@ for epoch in range(1, 3):
     exp.fit(data_x, data_y, batch_size=200, epochs=epoch)
     score = exp.evaluate(x_test, y_test)
     results.append(["exponential", epoch, score])
-    # break
 
 # %%
 # Create results df
 score_df = pd.DataFrame(results, columns=("Activation", "Epoch", "RMSE"))
 score_df.to_csv("activations.csv")
-score_df.head()
+score_df.head(6)
 
 # %%
-score_df.plot.line(x="Epoch", y="RMSE")
+fig = px.line(score_df, x="Epoch", y="RMSE", color="Activation")
 
 # %%
