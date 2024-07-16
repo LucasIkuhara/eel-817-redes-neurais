@@ -37,8 +37,8 @@ def make_model(activation: callable) -> Sequential:
 
 # %%
 # Custom activation functions
-IN_LIMIT = 5
-OUT_LIMIT = 20
+IN_LIMIT = 3
+OUT_LIMIT = 15
 
 def limit(x):
     return math.maximum(math.minimum(x, IN_LIMIT), -IN_LIMIT)
@@ -55,7 +55,7 @@ def exp_relu(x: tf.Tensor):
 # %%
 # Compare activations
 results = []
-MAX_EPOCHS = 3
+MAX_EPOCHS = 10
 
 for epoch in range(1, MAX_EPOCHS + 1):
 
@@ -102,6 +102,6 @@ score_df.to_csv("activations.csv")
 score_df.head(6)
 
 # %%
-fig = px.line(score_df, x="Epoch", y="RMSE", color="Activation")
+fig = px.scatter(score_df, x="Epoch", y="RMSE", color="Activation")
 
 # %%
