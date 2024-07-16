@@ -10,6 +10,7 @@ from keras.api.layers import Dense
 from keras import activations
 from keras.losses import MeanSquaredError
 from tensorflow import math
+from math import e
 import pandas as pd
 
 # %%
@@ -39,7 +40,10 @@ def capped_relu(x: tf.Tensor):
     return math.maximum(math.minimum(x, 1.0), 0.0)
 
 def quadratic_relu(x: tf.Tensor):
-    return math.maximum(math.minimum(x**2, 1.0), 0.0)
+    return math.maximum(x**2, 0.0)
+
+def exp_relu(x: tf.Tensor):
+    return math.maximum(e**x, 0.0)
 
 def quadratic_relu(x: tf.Tensor):
     return math.maximum(math.minimum(x**2, 1.0), 0.0)
@@ -48,40 +52,49 @@ def quadratic_relu(x: tf.Tensor):
 # Compare activations
 results = []
 
-for epoch in np.linspace(100, 1000, 3, dtype=np.int32):
+for epoch in range(1, 3):
 
-    # # ReLu
-    # relu = make_model(activations.relu)
-    # relu.fit(x, y, batch_size=200, epochs=300)
-    # score = relu.evaluate(x_test, y_test)
-    # results.append(["relu", epoch, score])
+    # ReLu
+    relu = make_model(activations.relu)
+    relu.fit(data_x, data_y, batch_size=200, epochs=300)
+    score = relu.evaluate(x_test, y_test)
+    results.append(["relu", epoch, score])
 
-    # # tanh
-    # tanh = make_model(activations.tanh)
-    # tanh.fit(data_x, data_y, batch_size=200, epochs=epoch)
-    # score = tanh.evaluate(x_test, y_test)
-    # results.append(["tanh", epoch, score])
+    # tanh
+    tanh = make_model(activations.tanh)
+    tanh.fit(data_x, data_y, batch_size=200, epochs=epoch)
+    score = tanh.evaluate(x_test, y_test)
+    results.append(["tanh", epoch, score])
 
-    # # sigmoid
-    # sigmoid = make_model(activations.sigmoid)
-    # sigmoid.fit(data_x, data_y, batch_size=200, epochs=epoch)
-    # score = sigmoid.evaluate(x_test, y_test)
-    # results.append(["sigmoid", epoch, score])
+    # sigmoid
+    sigmoid = make_model(activations.sigmoid)
+    sigmoid.fit(data_x, data_y, batch_size=200, epochs=epoch)
+    score = sigmoid.evaluate(x_test, y_test)
+    results.append(["sigmoid", epoch, score])
 
     # capped relu
-    # reExp = make_model(capped_relu)
-    # reExp.fit(data_x, data_y, batch_size=200, epochs=300)
+    capped = make_model(capped_relu)
+    capped.fit(data_x, data_y, batch_size=200, epochs=epoch)
+    score = capped.evaluate(x_test, y_test)
+    results.append(["capped", epoch, score])
 
-    # rectified Exponential (reExp)
+    # rectified quadratic
     quadratic = make_model(quadratic_relu)
     quadratic.fit(data_x, data_y, batch_size=200, epochs=epoch)
     score = quadratic.evaluate(x_test, y_test)
     results.append(["quadratic", epoch, score])
+
+    # rectified Exponential (reExp)
+    exp = make_model(exp_relu)
+    exp.fit(data_x, data_y, batch_size=200, epochs=epoch)
+    score = exp.evaluate(x_test, y_test)
+    results.append(["exponential", epoch, score])
     # break
 
 # %%
 # Create results df
 score_df = pd.DataFrame(results, columns=("Activation", "Epoch", "RMSE"))
+score_df.to_csv("activations.csv")
 score_df.head()
 
 # %%
