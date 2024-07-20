@@ -8,6 +8,7 @@ from keras.api.layers import Dense
 from keras import activations
 from keras.losses import MeanSquaredError
 from tensorflow import math
+import plotly.express as px
 import pandas as pd
 
 # %%
@@ -63,38 +64,40 @@ class TrackEpochLoss(keras.callbacks.Callback):
         if current_loss:
             results.append([self.label, epoch, current_loss])
 
+for _ in range(30):
+    # ReLu
+    relu = make_model(activations.relu)
+    relu.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("relu")])
 
-# ReLu
-relu = make_model(activations.relu)
-relu.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("relu")])
+    # tanh
+    tanh = make_model(activations.tanh)
+    tanh.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("tanh")])
 
-# tanh
-tanh = make_model(activations.tanh)
-tanh.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("tanh")])
+    # sigmoid
+    sigmoid = make_model(activations.sigmoid)
+    sigmoid.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("sigmoid")])
 
-# sigmoid
-sigmoid = make_model(activations.sigmoid)
-sigmoid.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("sigmoid")])
+    # capped relu
+    capped = make_model(capped_relu)
+    capped.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("capped")])
 
-# capped relu
-capped = make_model(capped_relu)
-capped.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("capped")])
+    # rectified quadratic
+    quadratic = make_model(quadratic_relu)
+    quadratic.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("quadratic")])
 
-# rectified quadratic
-quadratic = make_model(quadratic_relu)
-quadratic.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("quadratic")])
-
-# rectified Exponential (reExp)
-exp = make_model(exp_relu)
-exp.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("exp")])
+    # rectified Exponential (reExp)
+    exp = make_model(exp_relu)
+    exp.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("exp")])
 
 # %%
 # Create results df
 score_df = pd.DataFrame(results, columns=("Activation", "Epoch", "RMSE"))
-score_df.to_csv("activations.csv")
+score_df.to_csv("activations30.csv")
 score_df.head(6)
 
 # %%
-fig = px.scatter(score_df, x="Epoch", y="RMSE", color="Activation")
-
-# %%
+# Generate stats
+gp = score_df.groupby(["Activation", "Epoch"])
+stats_df = gp.mean()
+stats_df["std_rmse"] = gp.std()
+stats_df.to_csv("summarized.csv")
