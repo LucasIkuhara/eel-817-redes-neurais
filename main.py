@@ -1,8 +1,6 @@
 # %%
 import tensorflow as tf
 from tensorflow import keras
-import numpy as np
-from keras import Input
 from sklearn.model_selection import train_test_split
 from sklearn.datasets import fetch_california_housing
 from keras.api.models import Sequential
@@ -10,9 +8,7 @@ from keras.api.layers import Dense
 from keras import activations
 from keras.losses import MeanSquaredError
 from tensorflow import math
-from math import e
 import pandas as pd
-import plotly.express as px
 
 # %%
 
@@ -27,8 +23,8 @@ x_train, x_test, y_train, y_test = train_test_split(
 # Model creation with parametrized activations
 def make_model(activation: callable) -> Sequential:
     model = Sequential([
-        Dense(8, activation=activation),
-        Dense(8, activation=activation),
+        Dense(1024, activation=activation),
+        Dense(1024, activation=activation),
         Dense(1)
     ])
 
@@ -55,45 +51,42 @@ def exp_relu(x: tf.Tensor):
 # %%
 # Compare activations
 results = []
-MAX_EPOCHS = 10
+MAX_EPOCHS = 100
 
-for epoch in range(1, MAX_EPOCHS + 1):
+class TrackEpochLoss(keras.callbacks.Callback):
+    def __init__(self, label: str):
+        self.label = label
 
-    # ReLu
-    relu = make_model(activations.relu)
-    relu.fit(data_x, data_y, batch_size=200, epochs=epoch)
-    score = relu.evaluate(x_test, y_test)
-    results.append(["relu", epoch, score])
+    def on_epoch_end(self, epoch, logs=None):
+        current_loss = logs.get("loss")
 
-    # tanh
-    tanh = make_model(activations.tanh)
-    tanh.fit(data_x, data_y, batch_size=200, epochs=epoch)
-    score = tanh.evaluate(x_test, y_test)
-    results.append(["tanh", epoch, score])
+        if current_loss:
+            results.append([self.label, epoch, current_loss])
 
-    # sigmoid
-    sigmoid = make_model(activations.sigmoid)
-    sigmoid.fit(data_x, data_y, batch_size=200, epochs=epoch)
-    score = sigmoid.evaluate(x_test, y_test)
-    results.append(["sigmoid", epoch, score])
 
-    # capped relu
-    capped = make_model(capped_relu)
-    capped.fit(data_x, data_y, batch_size=200, epochs=epoch)
-    score = capped.evaluate(x_test, y_test)
-    results.append(["capped", epoch, score])
+# ReLu
+relu = make_model(activations.relu)
+relu.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("relu")])
 
-    # rectified quadratic
-    quadratic = make_model(quadratic_relu)
-    quadratic.fit(data_x, data_y, batch_size=200, epochs=epoch)
-    score = quadratic.evaluate(x_test, y_test)
-    results.append(["quadratic", epoch, score])
+# tanh
+tanh = make_model(activations.tanh)
+tanh.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("tanh")])
 
-    # rectified Exponential (reExp)
-    exp = make_model(exp_relu)
-    exp.fit(data_x, data_y, batch_size=200, epochs=epoch)
-    score = exp.evaluate(x_test, y_test)
-    results.append(["exponential", epoch, score])
+# sigmoid
+sigmoid = make_model(activations.sigmoid)
+sigmoid.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("sigmoid")])
+
+# capped relu
+capped = make_model(capped_relu)
+capped.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("capped")])
+
+# rectified quadratic
+quadratic = make_model(quadratic_relu)
+quadratic.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("quadratic")])
+
+# rectified Exponential (reExp)
+exp = make_model(exp_relu)
+exp.fit(data_x, data_y, batch_size=200, epochs=MAX_EPOCHS, callbacks=[TrackEpochLoss("exp")])
 
 # %%
 # Create results df
